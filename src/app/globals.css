@@ -1,0 +1,90 @@
+@import "tailwindcss" source("../");
+
+/* source("../") khai báo base = src/ (tương đối từ file CSS này) và TẮT
+   auto-detection của Tailwind v4. Auto-detect dùng .git làm ranh giới quét —
+   trong Docker không có .git nên CSS chỉ có theme, mất toàn bộ utility.
+   Xem https://tailwindcss.com/docs/detecting-classes-in-source-files */
+
+/* ==========================================================
+   STEPS LMS — Design tokens
+   Màu chủ đạo: xanh dương (brand). Giao diện sáng, đơn giản.
+   ========================================================== */
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  --background: #f6f8fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --muted: #64748b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-muted: var(--muted);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Trang chi tiết lớp: khóa cuộn khung chính để cụm tiêu đề + tab đứng yên. */
+#app-scroll:has([data-fill-page]) {
+  overflow: hidden;
+}
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  aside,
+  header {
+    display: none !important;
+  }
+  #app-scroll {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
+
+/* Thanh cuộn mảnh */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

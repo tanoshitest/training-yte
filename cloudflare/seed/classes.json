@@ -1,0 +1,42 @@
+[
+  {
+    "id": "class-demo-starters-a",
+    "code": "STEPS-ST-A",
+    "name": "STEPS Starters A",
+    "classTypeId": "class-standard",
+    "branchId": "branch-steps-1",
+    "teacherId": "teacher-quynh",
+    "roomId": "room-1",
+    "syllabusId": "syllabus-starters",
+    "status": "ACTIVE",
+    "studentIds": ["student-demo-1"],
+    "tuitionPackageId": "tuition-standard-24",
+    "billingMode": "COURSE",
+    "sessionPrice": 200000,
+    "schedules": [
+      { "weekday": 1, "periodId": "period-3", "startTime": "17:30", "endTime": "19:00" },
+      { "weekday": 3, "periodId": "period-3", "startTime": "17:30", "endTime": "19:00" }
+    ],
+    "note": "Lớp demo STEPS dành cho trình độ Starters."
+  },
+  {
+    "id": "class-demo-movers-b",
+    "code": "STEPS-MV-B",
+    "name": "STEPS Movers B",
+    "classTypeId": "class-standard",
+    "branchId": "branch-steps-2",
+    "teacherId": "",
+    "roomId": "room-2",
+    "syllabusId": "",
+    "status": "ACTIVE",
+    "studentIds": [],
+    "tuitionPackageId": "tuition-standard-24",
+    "billingMode": "MONTHLY",
+    "sessionPrice": 100000,
+    "schedules": [
+      { "weekday": 2, "periodId": "period-4", "startTime": "19:15", "endTime": "20:45" },
+      { "weekday": 4, "periodId": "period-4", "startTime": "19:15", "endTime": "20:45" }
+    ],
+    "note": "Lớp demo STEPS dành cho trình độ Movers."
+  }
+]

@@ -1,0 +1,2274 @@
+// STEPS LMS — Prisma schema
+// Tham chi?u: docs/PRD.md (§18 Data Model, §19 ERD, §20 Data Rules)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Kho trạng thái tương thích cho giao diện Worker khi tự host trên VPS.
+/// Mọi dữ liệu trước đây nằm trong Cloudflare KV / Durable Objects được lưu
+/// thành JSONB trong PostgreSQL, có namespace ngay trong `key`.
+model VpsAppState {
+  key       String   @id @db.VarChar(500)
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("vps_app_state")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  /// Học vụ — hiện dùng chung y hệt quyền ADMIN (xem `effectiveRole` trong src/lib/roles.ts).
+  ACADEMIC
+  /// Kế toán — học phí, thu chi, đối soát, lương. Không vào vận hành / đào tạo.
+  ACCOUNTANT
+}
+
+/// Lo?i l?p — quy?t d?nh mô hình tính h?c phí (PRD §5.3, §13)
+enum ClassType {
+  NORMAL // h?c phí theo gói s? bu?i
+  IELTS // h?c phí theo khóa
+}
+
+/// PRD §5.4
+enum ClassStatus {
+  DRAFT // Nháp
+  ACTIVE // Ðang h?c
+  PAUSED // T?m d?ng
+  FINISHED // Ðã k?t thúc
+}
+
+/// PRD §6.2
+enum StudentStatus {
+  UNASSIGNED // Chua x?p l?p
+  STUDYING // Ðang h?c
+  RESERVED // B?o luu
+  DROPPED // Ngh? h?c
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  RESERVED
+  TRANSFERRED
+  DROPPED
+}
+
+/// PRD §9
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+/// PRD §11.1
+enum AttendanceStatus {
+  PRESENT // Có mặt — trừ 1 buổi
+  ABSENT // Vắng không phép — trừ 1 buổi
+  EXCUSED // Vắng phép — trừ 1 buổi; buổi Nghỉ học cả lớp thì không trừ
+  RESERVED // Bảo lưu — không trừ buổi
+}
+
+enum LessonRating {
+  A_PLUS
+  A
+  A_MINUS
+  B
+}
+
+enum HomeworkRating {
+  FULL_100
+  EIGHTY_80
+  BELOW_50
+  ZERO_0
+}
+
+enum SyllabusStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum CurriculumSectionType {
+  UNIT
+  REVIEW
+  PROJECT
+  MIDTERM_TEST
+  FINAL_TEST
+  OTHER
+}
+
+enum LessonResourceType {
+  LESSON_PLAN
+  VIDEO
+  AUDIO
+  WORKSHEET
+  PDF
+  SLIDE
+  GAME
+  QUIZ
+  HOMEWORK
+  TEACHER_RESOURCE
+  STUDENT_RESOURCE
+  EXTERNAL_LINK
+  OTHER
+}
+
+/// Lo?i bút toán h?c phí
+enum TuitionEntryType {
+  BASE // h?c phí gói/khóa ban d?u
+  EXTRA_SESSION // phát sinh do tang bu?i (ch? áp d?ng NORMAL — PRD §14.4, R11)
+  DISCOUNT
+  ADJUSTMENT
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+/// Phân loại doanh số tại thời điểm thu tiền. Null trên phiếu cũ/kỹ thuật = không lên chart.
+enum TuitionRevenueKind {
+  NEW
+  RENEWAL
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  COMPLETE_SESSION
+  CANCEL_SESSION
+  /// Hoàn tác m?t dòng nh?t ký tru?c dó (PRD §26 — b?n thân vi?c hoàn tác cung ph?i d? l?i d?u v?t)
+  ROLLBACK
+}
+
+enum AdmissionStage {
+  RECEIVED
+  COLLECTING
+  WAITING_TEST
+  CONSULTING
+  LOCKED
+  PLACED
+  FIRST_MONTH_CARE
+  CARE_COMPLETE
+}
+
+enum AdmissionPaymentStatus {
+  UNPAID
+  DEPOSIT
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum RecruitmentTaskKind {
+  COMPLETE_PROFILE
+  ASSESSMENT
+  TUITION_CONSULTATION
+  PAYMENT_FOLLOW_UP
+  ONBOARDING
+  CONVERT_STUDENT
+}
+
+enum RecruitmentTaskStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// AUTH & NGU?I DÙNG
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher                   Teacher?
+  student                   Student?
+  auditLogs                 AuditLog[]
+  /// Nh?ng dòng nh?t ký mà ngu?i này dã b?m hoàn tác.
+  rolledBackAudits          AuditLog[]            @relation("AuditRolledBackBy")
+  recruitmentCases          RecruitmentCase[]     @relation("RecruitmentConsultant")
+  assignedRecruitmentTasks  RecruitmentTask[]     @relation("RecruitmentTaskAssignee")
+  completedRecruitmentTasks RecruitmentTask[]     @relation("RecruitmentTaskCompletedBy")
+  recruitmentActivities     RecruitmentActivity[]
+  academicLessonSessions    LessonSession[]       @relation("AcademicSessionAssignee")
+
+  assignedGeneralTasks  GeneralTask[]     @relation("GeneralTaskAssignee")
+  createdGeneralTasks   GeneralTask[]     @relation("GeneralTaskCreator")
+  completedGeneralTasks GeneralTask[]     @relation("GeneralTaskCompletedBy")
+  tuitionReminders      TuitionReminder[]
+
+  @@index([role])
+  @@map("legacy_users")
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  code      String   @unique
+  /// Không còn dùng ? giao di?n — gi? c?t d? không ph?i DROP COLUMN khi deploy.
+  specialty String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classes        Class[]
+  lessonSessions LessonSession[]
+
+  @@map("legacy_teachers")
+}
+
+// ============================================================
+// C?U HÌNH H? TH?NG (PRD §17)
+// ============================================================
+
+model Center {
+  id        String   @id @default(cuid())
+  name      String
+  logoUrl   String?
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("legacy_centers")
+}
+
+/// Chi nhánh — co s? v?t lý c?a trung tâm. M?i phòng h?c thu?c m?t chi nhánh.
+model Branch {
+  id   String @id @default(cuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms            Room[]
+  classes          Class[]
+  recruitmentCases RecruitmentCase[]
+
+  @@map("legacy_branches")
+}
+
+model Room {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  /// Ng?ng dùng: phòng h?c dùng chung toàn trung tâm, không chia theo chi nhánh.
+  /// C?t gi? l?i d? deploy không ph?i DROP COLUMN (docs/DEPLOY.md §9).
+  branchId String?
+  capacity Int     @default(20)
+  isActive Boolean @default(true)
+  note     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branch         Branch?         @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  classes        Class[]
+  lessonSessions LessonSession[]
+
+  @@index([branchId])
+  @@map("legacy_rooms")
+}
+
+/// C?p h?c — VD: Kids 1, Basic, IELTS Foundation (PRD §17.4)
+model Level {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  /// Không còn dùng — level gi? là b?n ghi riêng trong `SubLevel`. Gi? c?t d? kh?i
+  /// DROP COLUMN lúc deploy (docs/DEPLOY.md §9).
+  levelCount Int      @default(1)
+  order      Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  syllabuses     Syllabus[]
+  classes        Class[]
+  normalPackages NormalPackage[]
+  subLevels      SubLevel[]
+
+  @@map("legacy_levels")
+}
+
+/// Level bên trong c?p h?c, có tên t? d?t — VD: Kids 1 ? Starters, Movers (PRD §17.4).
+/// B?ng giá và l?p h?c ch?n level t? danh m?c này.
+model SubLevel {
+  id               String   @id @default(cuid())
+  levelId          String
+  name             String
+  /// Học phí gốc 24 tuần (giá niêm yết, in trên biên lai). Cột cũ `basePrice` giữ nghĩa này.
+  basePrice        Decimal? @db.Decimal(12, 2)
+  /// Nửa gốc 24 tuần — chỉ lưu để tương thích, biên lai không in cột này.
+  basePrice12Weeks Decimal? @db.Decimal(12, 2)
+  /// Chiết khấu gói 24 tuần (48 buổi).
+  discount24Weeks  Decimal? @db.Decimal(12, 2)
+  /// Chiết khấu dùng trong công thức gói 12 tuần (24 buổi), cấu hình độc lập.
+  discount12Weeks  Decimal? @db.Decimal(12, 2)
+  order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  level          Level           @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  normalPackages NormalPackage[]
+  classes        Class[]
+
+  @@unique([levelId, name])
+  @@index([levelId])
+  @@map("legacy_sub_levels")
+}
+
+/// Ca h?c — VD: Ca 1 08:00-09:30 (PRD §17.5)
+model LessonPeriod {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  startTime String // "HH:mm"
+  endTime   String // "HH:mm"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schedules ClassSchedule[]
+
+  @@map("legacy_lesson_periods")
+}
+
+// ============================================================
+// H?C PHÍ — C?U HÌNH GIÁ (PRD §17.6 + nguyên t?c 5: không hard-code giá)
+// ============================================================
+
+/// Gói h?c l?p thu?ng: Level × s? bu?i ? giá (PRD §14.1)
+model NormalPackage {
+  id             String   @id @default(cuid())
+  levelId        String
+  /// Level c?a dòng giá. Nullable vì d? li?u cu có th? chua gán du?c level nào.
+  subLevelId     String?
+  /// Không còn dùng — level gi? là b?n ghi riêng (`subLevel`). Gi? c?t d? kh?i
+  /// DROP COLUMN lúc deploy (docs/DEPLOY.md §9).
+  levelNo        Int      @default(1)
+  name           String
+  totalSessions  Int
+  price          Decimal  @db.Decimal(12, 2)
+  /// Ðon giá 1 bu?i phát sinh thêm (PRD §14.4). Null ? price / totalSessions
+  extraUnitPrice Decimal? @db.Decimal(12, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  level    Level            @relation(fields: [levelId], references: [id])
+  subLevel SubLevel?        @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
+  tuitions StudentTuition[]
+  classes  Class[]
+
+  @@unique([subLevelId, totalSessions])
+  @@map("legacy_normal_packages")
+}
+
+/// Khóa IELTS: giá tr?n khóa, không ph? thu?c s? bu?i (PRD §15)
+model IeltsCourse {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  basePrice       Decimal? @db.Decimal(12, 2)
+  description     String?
+  price           Decimal  @db.Decimal(12, 2)
+  plannedSessions Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tuitions StudentTuition[]
+  classes  Class[]
+
+  @@map("legacy_ielts_courses")
+}
+
+// ============================================================
+// SYLLABUS (PRD §4)
+// ============================================================
+
+model Syllabus {
+  id              String         @id @default(cuid())
+  /// Mã tra c?u nhanh (SYL0001, IELTS6.0...). Nullable vì d? li?u cu chua có mã.
+  code            String?        @unique
+  name            String
+  levelId         String?
+  description     String?
+  /// Tên level tự do từ curriculum source, dùng khi không map với Level hệ thống.
+  levelLabel      String?
+  totalCourseDays Int            @default(0)
+  sortOrder       Int            @default(0)
+  metadata        Json?
+  status          SyllabusStatus @default(DRAFT)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  level      Level?              @relation(fields: [levelId], references: [id])
+  units      SyllabusUnit[]
+  sections   CurriculumSection[]
+  courseDays CourseDay[]
+  resources  LessonResource[]
+  classes    ClassSyllabus[]
+
+  @@index([status])
+  @@map("legacy_syllabuses")
+}
+
+/// M?t Unit c?a syllabus. B?ng/c?t v?n mang tên "stage" t? th?i g?i là "Ch?ng" —
+/// gi? nguyên d? kh?i ph?i RENAME khi deploy (docs/DEPLOY.md §9).
+model SyllabusUnit {
+  id                 String   @id @default(cuid())
+  syllabusId         String
+  sectionId          String?  @unique
+  unitNumber         Int?
+  name               String
+  topic              String?
+  overview           String?  @db.Text
+  learningObjectives Json?
+  order              Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  syllabus   Syllabus           @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  section    CurriculumSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  lessons    SyllabusLesson[]
+  courseDays CourseDay[]
+  resources  LessonResource[]
+
+  @@unique([syllabusId, order])
+  @@map("legacy_syllabus_stages")
+}
+
+model SyllabusLesson {
+  id           String  @id @default(cuid())
+  unitId       String? @map("stageId")
+  courseDayId  String?
+  lessonNumber Int?
+  lessonType   String  @default("OTHER")
+  name         String
+  order        Int
+
+  pupilBookPage    String?
+  activityBookPage String?
+  hasListening     Boolean @default(false)
+  hasSpeaking      Boolean @default(false)
+  hasReading       Boolean @default(false)
+  hasWriting       Boolean @default(false)
+  tasks            Json?
+  languageTargets  Json?
+  lessonOutcomes   Json?
+
+  // N?i dung trên l?p (PRD §4.6)
+  lessonPlan String? @db.Text
+  vocabulary String? @db.Text
+  grammar    String? @db.Text
+  // Sau bu?i h?c
+  homework   String? @db.Text
+  // H?c li?u: [{ title, url }]
+  materials  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  unit      SyllabusUnit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  courseDay CourseDay?       @relation(fields: [courseDayId], references: [id], onDelete: Cascade)
+  resources LessonResource[]
+  sessions  LessonSession[]
+  exercises LessonExercise[]
+
+  @@unique([unitId, order], map: "syllabus_lessons_stageId_order_key")
+  @@unique([courseDayId, order])
+  @@index([courseDayId])
+  @@map("legacy_syllabus_lessons")
+}
+
+model LessonExercise {
+  id        String   @id @default(cuid())
+  lessonId  String
+  skill     String
+  kind      String
+  title     String
+  sortOrder Int
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lesson SyllabusLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, sortOrder])
+  @@map("legacy_lesson_exercises")
+}
+
+model CurriculumSection {
+  id             String                @id @default(cuid())
+  syllabusId     String
+  type           CurriculumSectionType
+  title          String
+  courseDayStart Int?
+  courseDayEnd   Int?
+  sortOrder      Int
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  syllabus   Syllabus         @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  unit       SyllabusUnit?
+  courseDays CourseDay[]
+  resources  LessonResource[]
+
+  @@unique([syllabusId, sortOrder])
+  @@index([syllabusId, type])
+  @@map("legacy_curriculum_sections")
+}
+
+model CourseDay {
+  id              String   @id @default(cuid())
+  syllabusId      String
+  sectionId       String
+  unitId          String?
+  courseDayNumber Int
+  unitDayNumber   Int?
+  title           String?
+  sortOrder       Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  syllabus  Syllabus          @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  section   CurriculumSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  unit      SyllabusUnit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  lessons   SyllabusLesson[]
+  resources LessonResource[]
+
+  @@unique([syllabusId, courseDayNumber])
+  @@unique([syllabusId, sortOrder])
+  @@index([sectionId, sortOrder])
+  @@index([unitId, unitDayNumber])
+  @@map("legacy_course_days")
+}
+
+model LessonResource {
+  id           String             @id @default(cuid())
+  syllabusId   String
+  sectionId    String?
+  unitId       String?
+  courseDayId  String?
+  lessonId     String?
+  resourceType LessonResourceType @default(EXTERNAL_LINK)
+  title        String
+  url          String
+  description  String?            @db.Text
+  sortOrder    Int                @default(0)
+  isActive     Boolean            @default(true)
+  openInNewTab Boolean            @default(true)
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  syllabus  Syllabus           @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  section   CurriculumSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  unit      SyllabusUnit?      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  courseDay CourseDay?         @relation(fields: [courseDayId], references: [id], onDelete: Cascade)
+  lesson    SyllabusLesson?    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, url])
+  @@index([syllabusId, sortOrder])
+  @@index([sectionId, sortOrder])
+  @@index([unitId, sortOrder])
+  @@index([courseDayId, sortOrder])
+  @@map("legacy_lesson_resources")
+}
+
+// ============================================================
+// L?P H?C (PRD §5)
+// ============================================================
+
+model Class {
+  id            String      @id @default(cuid())
+  code          String      @unique
+  name          String
+  type          ClassType
+  /// C?p h?c — ch? l?p thu?ng (l? trình C?p 1 ? C?p 2). L?p IELTS d? tr?ng.
+  levelId       String?
+  /// Level dang h?c bên trong c?p h?c — ch? l?p thu?ng (PRD §17.4).
+  subLevelId    String?
+  branchId      String?
+  teacherId     String?
+  roomId        String?
+  /// Ng?ng dùng: l?p thu?ng tính theo gói bu?i c?a t?ng h?c viên (thu lúc ghi danh ho?c
+  /// ? màn hình H?c phí) nên l?p không gi? gói. C?t gi? l?i d? deploy không ph?i DROP COLUMN.
+  packageId     String?
+  /// Rule h?c phí c?a l?p IELTS: tính tr?n khóa nên h?c phí thu?c v? l?p (R2).
+  ieltsCourseId String?
+  /// Ng?ng dùng: l?p không có ngày b?t d?u, ngày b?t d?u h?c là c?a t?ng h?c viên
+  /// (`Enrollment.joinedAt`). C?t gi? l?i d? deploy không ph?i DROP COLUMN.
+  startDate     DateTime?
+  /// Ng?ng dùng: l?p ch?y t?i khi Admin chuy?n tr?ng thái sang K?t thúc.
+  endDate       DateTime?
+  status        ClassStatus @default(DRAFT)
+  note          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  level       Level?         @relation(fields: [levelId], references: [id])
+  subLevel    SubLevel?      @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
+  branch      Branch?        @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  teacher     Teacher?       @relation(fields: [teacherId], references: [id])
+  room        Room?          @relation(fields: [roomId], references: [id])
+  package     NormalPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  ieltsCourse IeltsCourse?   @relation(fields: [ieltsCourseId], references: [id], onDelete: SetNull)
+
+  syllabuses       ClassSyllabus[]
+  schedules        ClassSchedule[]
+  enrollments      Enrollment[]
+  sessions         LessonSession[]
+  recruitmentCases RecruitmentCase[]
+
+  @@index([type])
+  @@index([status])
+  @@index([teacherId])
+  @@index([branchId])
+  @@map("legacy_classes")
+}
+
+/// Syllabus gán cho l?p. M?t l?p h?c du?c nhi?u syllabus n?i ti?p nhau: d?y h?t
+/// syllabus `order` nh? m?i sang cái ti?p theo, nên t?ng s? bu?i c?a l?p là t?ng
+/// s? bu?i c?a t?t c? syllabus dã gán.
+model ClassSyllabus {
+  id         String @id @default(cuid())
+  classId    String
+  syllabusId String
+  order      Int    @default(1)
+
+  createdAt DateTime @default(now())
+
+  class    Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  /// `Restrict` — không cho xoá syllabus khi còn dòng gán; `deleteSyllabus` t? g?
+  /// các dòng này trong cùng m?t giao d?ch tru?c khi xoá.
+  syllabus Syllabus @relation(fields: [syllabusId], references: [id], onDelete: Restrict)
+
+  @@unique([classId, syllabusId])
+  @@index([classId, order])
+  @@map("legacy_class_syllabuses")
+}
+
+/// L?ch h?c l?p theo tu?n c?a l?p (PRD §7.4)
+model ClassSchedule {
+  id        String   @id @default(cuid())
+  classId   String
+  /// 0 = Ch? nh?t … 6 = Th? 7
+  weekday   Int
+  periodId  String?
+  startTime String // "HH:mm"
+  endTime   String // "HH:mm"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class  Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  period LessonPeriod? @relation(fields: [periodId], references: [id])
+
+  @@unique([classId, weekday, startTime])
+  @@map("legacy_class_schedules")
+}
+
+// ============================================================
+// H?C VIÊN & GHI DANH (PRD §6)
+// ============================================================
+
+model Student {
+  id                  String        @id @default(cuid())
+  code                String        @unique
+  fullName            String
+  dateOfBirth         DateTime?
+  parentName          String?
+  parentPhone         String?
+  email               String?
+  address             String?
+  status              StudentStatus @default(UNASSIGNED)
+  note                String?
+  /// Chỉ hồ sơ tạo mới trực tiếp/từ tuyển sinh sau mốc triển khai mới đủ điều kiện
+  /// có gói học phí đầu tiên được tính là doanh số đóng mới. Import lịch sử đặt false.
+  isNewRevenueStudent Boolean       @default(true)
+  /// Tài kho?n dang nh?p — tu? ch?n; chua t?o thì h?c viên chua vào du?c h? th?ng.
+  userId              String?       @unique
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  enrollments      Enrollment[]
+  attendances      Attendance[]
+  tuitions         StudentTuition[]
+  advances         StudentAdvance[]
+  recruitmentCases RecruitmentCase[]
+  tuitionReminders TuitionReminder[]
+
+  @@index([status])
+  @@map("legacy_students")
+}
+
+/// H?c phí thu tru?c khi bi?t h?c viên vào l?p nào (PRD §15).
+/// S? du = amount - usedAmount; x?p l?p xong thì ph?n du t? tr? vào h?c phí l?p dó.
+model StudentAdvance {
+  id         String   @id @default(cuid())
+  studentId  String
+  amount     Decimal  @db.Decimal(12, 2)
+  /// Ph?n dã tr? vào các h? so h?c phí — luôn = amount.
+  usedAmount Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("legacy_student_advances")
+}
+
+/// Student ? Class qua Enrollment d? gi? l?ch s? (PRD §6.3)
+model Enrollment {
+  id        String           @id @default(cuid())
+  studentId String
+  classId   String
+  status    EnrollmentStatus @default(ACTIVE)
+  joinedAt  DateTime         @default(now())
+  leftAt    DateTime?
+  note      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  tuition          StudentTuition?
+  tuitionReminders TuitionReminder[]
+
+  @@unique([studentId, classId])
+  @@index([classId, status])
+  @@map("legacy_enrollments")
+}
+
+// ============================================================
+// BU?I H?C TH?C T? (PRD §7, §8, §9)
+// ============================================================
+
+model LessonSession {
+  id               String        @id @default(cuid())
+  classId          String
+  syllabusLessonId String?
+  /// S? th? t? bu?i trong l?p — không d?i khi d?i l?ch (PRD §8.5, R12)
+  sequence         Int
+  /// Bu?i thêm c?a riêng l?p: không có bài trong Syllabus, không d?ng Syllabus g?c và l?p khác
+  isExtra          Boolean       @default(false)
+  /// Học vụ đánh dấu cả lớp nghỉ: không tính phí, thẻ lịch dạy mờ và ghi chú Nghỉ học.
+  isOff            Boolean       @default(false)
+  /// Giáo viên tick: buổi này có BTVN cần đánh giá. Không tick thì cột BTVN đóng băng.
+  hasHomework      Boolean       @default(false)
+  date             DateTime      @db.Date
+  startTime        String // "HH:mm"
+  endTime          String // "HH:mm"
+  roomId           String?
+  teacherId        String?
+  /// Học vụ phụ trách riêng buổi kiểm tra. Có giá trị thì buổi không yêu cầu nhận xét / báo cáo giáo viên.
+  academicStaffId  String?
+  status           SessionStatus @default(SCHEDULED)
+  cancelReason     String?
+  /// Bu?i bù cho session nào (PRD §9 — t?o session m?i, không s?a l?ch s?)
+  makeupForId      String?       @unique
+  completedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  class          Class           @relation(fields: [classId], references: [id], onDelete: Cascade)
+  syllabusLesson SyllabusLesson? @relation(fields: [syllabusLessonId], references: [id])
+  room           Room?           @relation(fields: [roomId], references: [id])
+  teacher        Teacher?        @relation(fields: [teacherId], references: [id])
+  academicStaff  User?           @relation("AcademicSessionAssignee", fields: [academicStaffId], references: [id], onDelete: SetNull)
+
+  makeupFor LessonSession? @relation("Makeup", fields: [makeupForId], references: [id])
+  makeup    LessonSession? @relation("Makeup")
+
+  /// Cột điểm kiểm tra thang 100 trên buổi: [{ id, name, scores: { studentId: number } }]
+  testColumns Json @default("[]")
+
+  attendances    Attendance[]
+  report         LessonReport?
+  tuitionEntries TuitionEntry[]
+
+  @@unique([classId, sequence])
+  @@index([date, status])
+  @@index([teacherId, date])
+  @@index([academicStaffId, date])
+  @@map("legacy_lesson_sessions")
+}
+
+model Attendance {
+  id                     String           @id @default(cuid())
+  sessionId              String
+  studentId              String
+  status                 AttendanceStatus @default(PRESENT)
+  lessonRating           LessonRating?
+  homeworkRating         HomeworkRating?
+  pronunciationVideoDone Boolean          @default(false)
+  note                   String?
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  session LessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@map("legacy_attendances")
+}
+
+/// Báo cáo sau bu?i h?c (PRD §12)
+model LessonReport {
+  id             String   @id @default(cuid())
+  sessionId      String   @unique
+  taughtContent  String?  @db.Text
+  classSituation String?  @db.Text
+  studentsToNote String?  @db.Text
+  homework       String?  @db.Text
+  note           String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  session LessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("legacy_lesson_reports")
+}
+
+// ============================================================
+// H?C PHÍ C?A H?C VIÊN (PRD §13–§16)
+// ============================================================
+
+model StudentTuition {
+  id           String    @id @default(cuid())
+  studentId    String
+  enrollmentId String    @unique
+  type         ClassType
+
+  // --- NORMAL ---
+  packageId     String?
+  totalSessions Int? // t?ng s? bu?i c?a gói
+  usedSessions  Int     @default(0) // ch? tang khi session COMPLETED (R8)
+  extraSessions Int     @default(0) // s? bu?i phát sinh ngoài gói (R11)
+
+  // --- IELTS ---
+  ieltsCourseId String?
+
+  /// T?ng ph?i thu = t?ng TuitionEntry
+  totalAmount        Decimal            @default(0) @db.Decimal(12, 2)
+  paidAmount         Decimal            @default(0) @db.Decimal(12, 2)
+  note               String?
+  /// Loại doanh số mặc định của chu kỳ đang thu. Gói đầu của học viên mới là NEW;
+  /// sau khi gia hạn được chuyển sang RENEWAL để các lần đóng tiếp theo giữ đúng loại.
+  currentRevenueKind TuitionRevenueKind @default(RENEWAL)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  student     Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  enrollment  Enrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  package     NormalPackage? @relation(fields: [packageId], references: [id])
+  ieltsCourse IeltsCourse?   @relation(fields: [ieltsCourseId], references: [id])
+
+  entries  TuitionEntry[]
+  payments TuitionPayment[]
+
+  @@index([studentId])
+  @@map("legacy_student_tuitions")
+}
+
+/// Bút toán phát sinh h?c phí — ngu?n s? th?t c?a totalAmount
+model TuitionEntry {
+  id        String           @id @default(cuid())
+  tuitionId String
+  type      TuitionEntryType
+  amount    Decimal          @db.Decimal(12, 2)
+  quantity  Int              @default(1)
+  /// N?u phát sinh do m?t bu?i h?c c? th? (NORMAL vu?t gói)
+  sessionId String?
+  note      String?
+  createdAt DateTime         @default(now())
+
+  tuition StudentTuition @relation(fields: [tuitionId], references: [id], onDelete: Cascade)
+  session LessonSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([tuitionId])
+  @@map("legacy_tuition_entries")
+}
+
+model TuitionPayment {
+  id             String              @id @default(cuid())
+  tuitionId      String
+  amount         Decimal             @db.Decimal(12, 2)
+  method         PaymentMethod       @default(CASH)
+  paidAt         DateTime            @default(now())
+  /// Ngày số buổi còn lại về 0 — gói mới tính từ ngày này. Ngày thu vẫn là paidAt.
+  coverageFrom   DateTime?           @db.Date
+  reference      String?
+  note           String?
+  /// Số tiền giáo trình thu kèm phiếu này. Không đổi học phí gói.
+  textbookAmount Decimal?            @db.Decimal(12, 2)
+  discountReason String?
+  /// Snapshot loại doanh số khi lập phiếu. Null = dữ liệu cũ/bút toán kỹ thuật, không lên chart.
+  revenueKind    TuitionRevenueKind?
+  createdAt      DateTime            @default(now())
+
+  tuition StudentTuition @relation(fields: [tuitionId], references: [id], onDelete: Cascade)
+
+  @@index([tuitionId])
+  @@index([paidAt])
+  @@index([paidAt, revenueKind])
+  @@map("legacy_tuition_payments")
+}
+
+/// Lần học vụ đã nhắc phụ huynh đóng học phí theo mốc số buổi còn lại.
+model TuitionReminder {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  studentId    String
+  /// 4 = còn 4 buổi; 0 = hết buổi; âm = đang nợ buổi (-2, -6, -10).
+  milestone    Int
+  round        Int
+  remaining    Int
+  /// `totalSessions` lúc nhắc — đóng gói mới thì cycle đổi, mốc 4 buổi có thể nhắc lại.
+  cycleKey     Int
+  remindedAt   DateTime @default(now())
+  remindedById String
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  remindedBy User       @relation(fields: [remindedById], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, milestone, cycleKey])
+  @@index([studentId, remindedAt])
+  @@map("legacy_tuition_reminders")
+}
+
+// ============================================================
+// AUDIT LOG (PRD §26 + nguyên t?c 8)
+// ============================================================
+
+model RecruitmentCase {
+  id                    String                 @id @default(cuid())
+  code                  String                 @unique
+  fullName              String
+  birthYear             Int?
+  phone                 String
+  normalizedPhone       String
+  schoolGrade           String?
+  schoolName            String?
+  learningHistory       String?                @db.Text
+  consultationDate      DateTime               @default(now())
+  testScheduledAt       DateTime?
+  testWaived            Boolean                @default(false)
+  consultantId          String?
+  branchId              String?
+  stage                 AdmissionStage         @default(RECEIVED)
+  assessment            String?                @db.Text
+  placementClassId      String?
+  proposedSchedule      String?
+  registrationPackage   String?
+  tuitionAmount         Decimal?               @db.Decimal(12, 2)
+  textbookAmount        Decimal?               @db.Decimal(12, 2)
+  discountAmount        Decimal?               @db.Decimal(12, 2)
+  discountReason        String?
+  quotedTotal           Decimal?               @db.Decimal(12, 2)
+  paymentStatus         AdmissionPaymentStatus @default(UNPAID)
+  paidAmount            Decimal                @default(0) @db.Decimal(12, 2)
+  tuitionNote           String?                @db.Text
+  expectedStartDate     DateTime?
+  textbookIssuedAt      DateTime?
+  photoReceivedAt       DateTime?
+  zaloAddedAt           DateTime?
+  attendanceListAddedAt DateTime?
+  consultantConfirmedAt DateTime?
+  convertedStudentId    String?
+  lostReason            String?
+  source                String                 @default("SYSTEM")
+  sourceKey             String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  consultant       User?                 @relation("RecruitmentConsultant", fields: [consultantId], references: [id], onDelete: SetNull)
+  branch           Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  placementClass   Class?                @relation(fields: [placementClassId], references: [id], onDelete: SetNull)
+  convertedStudent Student?              @relation(fields: [convertedStudentId], references: [id], onDelete: SetNull)
+  tasks            RecruitmentTask[]
+  activities       RecruitmentActivity[]
+
+  @@unique([source, sourceKey])
+  @@index([stage, updatedAt])
+  @@index([consultantId, stage])
+  @@index([normalizedPhone])
+  @@index([placementClassId])
+  @@map("legacy_recruitment_cases")
+}
+
+model RecruitmentTask {
+  id            String                @id @default(cuid())
+  caseId        String
+  kind          RecruitmentTaskKind
+  title         String
+  status        RecruitmentTaskStatus @default(OPEN)
+  assigneeId    String?
+  dueAt         DateTime?
+  completedAt   DateTime?
+  completedById String?
+  note          String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  case        RecruitmentCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  assignee    User?           @relation("RecruitmentTaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  completedBy User?           @relation("RecruitmentTaskCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@index([assigneeId, status, dueAt])
+  @@index([caseId, status])
+  @@map("legacy_recruitment_tasks")
+}
+
+model GeneralTask {
+  id            String                @id @default(cuid())
+  title         String
+  startDate     DateTime              @default(now())
+  endDate       DateTime
+  assigneeId    String
+  creatorId     String
+  status        RecruitmentTaskStatus @default(OPEN)
+  completedAt   DateTime?
+  completedById String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  assignee    User  @relation("GeneralTaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  creator     User  @relation("GeneralTaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  completedBy User? @relation("GeneralTaskCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@index([assigneeId, status])
+  @@index([creatorId])
+  @@map("legacy_general_tasks")
+}
+
+model RecruitmentActivity {
+  id        String   @id @default(cuid())
+  caseId    String
+  userId    String?
+  action    String
+  detail    String?
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+
+  case RecruitmentCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([caseId, createdAt])
+  @@map("legacy_recruitment_activities")
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String?
+  action    AuditAction
+  entity    String
+  entityId  String?
+  oldValue  Json?
+  newValue  Json?
+  ip        String?
+  createdAt DateTime    @default(now())
+
+  /// B?n khai báo cách d?o ngu?c thao tác này (`UndoPlan` — xem src/lib/audit-undo.ts).
+  /// `oldValue`/`newValue` ch? d? hi?n th? nên không d? d? phát l?i; null nghia là
+  /// thao tác không hoàn tác du?c (dòng cu, dang nh?p, d?i m?t kh?u…).
+  undo           Json?
+  rolledBackAt   DateTime?
+  rolledBackById String?
+
+  user         User? @relation(fields: [userId], references: [id])
+  rolledBackBy User? @relation("AuditRolledBackBy", fields: [rolledBackById], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("legacy_audit_logs")
+}
+
+// ============================================================
+// SEPAY + HÓA ĐƠN ĐIỆN TỬ (PLAN_SEPAY_EINVOICE_LMS)
+// BankTransaction → Payment → Allocation → Receivable → Receipt → Invoice
+// ============================================================
+
+enum FinanceReceivableStatus {
+  DRAFT
+  OPEN
+  PARTIALLY_PAID
+  PAID
+  OVERPAID
+  CANCELLED
+  REFUNDED
+}
+
+enum FinancePaymentOrderStatus {
+  ACTIVE
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum FinanceBankTxStatus {
+  RECEIVED
+  MATCHED
+  UNMATCHED
+  ALLOCATED
+  DUPLICATE
+  IGNORED
+  REVERSED
+  NEEDS_REVIEW
+}
+
+enum FinancePaymentStatus {
+  PENDING
+  COMPLETED
+  PARTIAL
+  OVERPAID
+  REFUNDED
+  VOIDED
+}
+
+enum FinanceInvoiceStatus {
+  PENDING
+  PROCESSING
+  ISSUED
+  FAILED
+  CANCELLED
+  ADJUSTED
+  REPLACED
+}
+
+model FinanceReceivable {
+  id             String                     @id @default(cuid())
+  receivableCode String                     @unique
+  studentId      String
+  tuitionId      String?
+  billingPeriod  String
+  issueDate      DateTime
+  dueDate        DateTime
+  amountDue      Decimal                    @db.Decimal(12, 2)
+  amountPaid     Decimal                    @default(0) @db.Decimal(12, 2)
+  balanceDue     Decimal                    @db.Decimal(12, 2)
+  currency       String                     @default("VND")
+  status         FinanceReceivableStatus    @default(OPEN)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  paymentOrders  FinancePaymentOrder[]
+  allocations    FinancePaymentAllocation[]
+  invoices       FinanceElectronicInvoice[]
+
+  @@index([studentId, status])
+  @@map("legacy_finance_receivables")
+}
+
+model FinancePaymentOrder {
+  id            String                    @id @default(cuid())
+  receivableId  String
+  studentId     String
+  paymentCode   String                    @unique
+  amount        Decimal                   @db.Decimal(12, 2)
+  bankAccountId String?
+  qrPayload     String?
+  qrUrl         String?
+  expiredAt     DateTime?
+  status        FinancePaymentOrderStatus @default(ACTIVE)
+  createdAt     DateTime                  @default(now())
+  receivable    FinanceReceivable         @relation(fields: [receivableId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("legacy_finance_payment_orders")
+}
+
+model FinanceBankTransaction {
+  id                    String                 @id @default(cuid())
+  provider              String
+  providerTransactionId String
+  gateway               String?
+  accountNumber         String?
+  transactionDate       DateTime
+  transferType          String
+  transferAmount        Decimal                @db.Decimal(12, 2)
+  content               String
+  referenceCode         String?
+  rawPayload            Json?
+  status                FinanceBankTxStatus    @default(RECEIVED)
+  reviewReason          String?
+  receivedAt            DateTime               @default(now())
+  processedAt           DateTime?
+  createdAt             DateTime               @default(now())
+  payments              FinanceLedgerPayment[]
+
+  @@unique([provider, providerTransactionId])
+  @@index([status, receivedAt])
+  @@map("legacy_finance_bank_transactions")
+}
+
+model FinanceLedgerPayment {
+  id                String                     @id @default(cuid())
+  paymentCode       String
+  studentId         String
+  bankTransactionId String
+  amount            Decimal                    @db.Decimal(12, 2)
+  paymentMethod     PaymentMethod              @default(BANK_TRANSFER)
+  paidAt            DateTime                   @default(now())
+  status            FinancePaymentStatus       @default(COMPLETED)
+  createdAt         DateTime                   @default(now())
+  bankTransaction   FinanceBankTransaction     @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  allocations       FinancePaymentAllocation[]
+  receipt           FinanceReceipt?
+  invoices          FinanceElectronicInvoice[]
+
+  @@index([studentId, paidAt])
+  @@map("legacy_finance_ledger_payments")
+}
+
+model FinancePaymentAllocation {
+  id              String               @id @default(cuid())
+  paymentId       String
+  receivableId    String
+  allocatedAmount Decimal              @db.Decimal(12, 2)
+  createdAt       DateTime             @default(now())
+  payment         FinanceLedgerPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  receivable      FinanceReceivable    @relation(fields: [receivableId], references: [id], onDelete: Restrict)
+
+  @@map("legacy_finance_payment_allocations")
+}
+
+model FinanceReceipt {
+  id            String               @id @default(cuid())
+  receiptNumber String               @unique
+  paymentId     String               @unique
+  studentId     String
+  amount        Decimal              @db.Decimal(12, 2)
+  issuedAt      DateTime             @default(now())
+  pdfUrl        String?
+  status        String               @default("ISSUED")
+  payment       FinanceLedgerPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@map("legacy_finance_receipts")
+}
+
+model FinanceElectronicInvoice {
+  id                String               @id @default(cuid())
+  studentId         String
+  paymentId         String
+  receivableId      String
+  provider          String
+  providerInvoiceId String?
+  invoiceNumber     String?
+  invoiceSeries     String?
+  invoiceTemplate   String?
+  taxAuthorityCode  String?
+  amount            Decimal              @db.Decimal(12, 2)
+  buyerName         String
+  buyerTaxCode      String?
+  buyerAddress      String?
+  buyerEmail        String?
+  lookupCode        String?
+  pdfUrl            String?
+  xmlUrl            String?
+  issuedAt          DateTime?
+  status            FinanceInvoiceStatus @default(PENDING)
+  retryCount        Int                  @default(0)
+  lastError         String?
+  rawResponse       Json?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  payment           FinanceLedgerPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  receivable        FinanceReceivable    @relation(fields: [receivableId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@map("legacy_finance_electronic_invoices")
+}
+
+model FinanceWebhookLog {
+  id               String   @id @default(cuid())
+  provider         String
+  requestId        String?
+  headers          Json?
+  payload          Json
+  signatureValid   Boolean
+  responseCode     Int
+  processingStatus String
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("legacy_finance_webhook_logs")
+}
+
+model FinanceStudentCredit {
+  id              String   @id @default(cuid())
+  studentId       String
+  sourcePaymentId String
+  amount          Decimal  @db.Decimal(12, 2)
+  remainingAmount Decimal  @db.Decimal(12, 2)
+  reason          String
+  status          String   @default("OPEN")
+  createdAt       DateTime @default(now())
+
+  @@index([studentId, status])
+  @@map("legacy_finance_student_credits")
+}
+
+// ============================================================
+// TẦNG LƯU TRỮ QUAN HỆ CHO ỨNG DỤNG ĐANG CHẠY (cloudflare/worker.ts)
+// ------------------------------------------------------------
+// Các model dưới đây thay thế những khối JSON lớn trong `vps_app_state`.
+// Mỗi thực thể một bảng, mỗi bản ghi một dòng, giữ nguyên định danh gốc
+// (`student-import-0006`, `class-import-s1`) làm khóa chính.
+//
+// Quy ước chung:
+//  * `position` giữ đúng thứ tự phần tử trong mảng JSON gốc. Giao diện phụ
+//    thuộc vào thứ tự này (nhật ký mới nhất đứng đầu, học viên theo thứ tự nhập).
+//  * Cột tiền dùng `Decimal(15, 0)` — số nguyên đồng, không phần lẻ, không dùng
+//    Float. Int 32-bit không đủ cho mức trần 1.000 tỷ mà `worker.ts` cho phép.
+//  * Trạng thái để kiểu `String` chứ không dùng enum: tầng này là bản sao trung
+//    thực của dữ liệu, thêm giá trị trạng thái mới trong app không được phép làm
+//    hỏng việc ghi. Ràng buộc giá trị đã có sẵn ở các hàm `clean*` trong worker.
+//  * Cột `String?` (NULL) nghĩa là **trường vắng mặt** trong JSON gốc; chuỗi rỗng
+//    vẫn được lưu là chuỗi rỗng. Đây là điều kiện để dựng lại JSON giống hệt.
+// ============================================================
+
+/// Phiên bản của từng khối dữ liệu, thay cho `updatedAt` của `vps_app_state`
+/// trong phép ghi có kiểm tra xung đột (`compareAndPut`).
+model OpsStorageBlock {
+  key       String   @id @db.VarChar(200)
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("storage_blocks")
+}
+
+// ------------------------------------------------------------
+// NHÂN SỰ VÀ HỌC VIÊN
+// ------------------------------------------------------------
+
+model OpsStudent {
+  id            String  @id
+  position      Int
+  code          String
+  fullName      String
+  phone         String
+  address       String
+  school        String
+  parentZalo    String
+  parentPhone1  String
+  parentPhone2  String
+  status        String
+  dateOfBirth   String
+  parentName    String
+  nationalId    String
+  note          String
+  loginEmail    String
+  loginPassword String
+  tuitionExempt Boolean
+
+  sessionBalances OpsStudentSessionBalance[]
+  tuitionCredits  OpsStudentTuitionCredit[]
+  paidThrough     OpsStudentTuitionPaidThrough[]
+  classJoinedAt   OpsStudentClassJoinedAt[]
+
+  @@index([position])
+  @@index([code])
+  @@map("students")
+}
+
+/// Số buổi còn lại của học viên theo từng lớp. Cho phép âm (học nợ buổi).
+model OpsStudentSessionBalance {
+  studentId String
+  classId   String
+  balance   Int
+
+  student OpsStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, classId])
+  @@map("student_session_balances")
+}
+
+/// Số buổi nghỉ do giáo viên, khấu trừ ở kỳ học phí kế tiếp.
+model OpsStudentTuitionCredit {
+  studentId String
+  classId   String
+  sessions  Int
+
+  student OpsStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, classId])
+  @@map("student_tuition_credits")
+}
+
+/// Ngày học viên được thêm vào từng lớp (YYYY-MM-DD) — mốc luật thu giữa tháng.
+model OpsStudentClassJoinedAt {
+  studentId String
+  classId   String
+  joinedAt  String
+
+  student OpsStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, classId])
+  @@map("student_class_joined_at")
+}
+
+/// Tháng học phí gần nhất đã thanh toán theo từng lớp (YYYY-MM).
+model OpsStudentTuitionPaidThrough {
+  studentId String
+  classId   String
+  month     String
+
+  student OpsStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, classId])
+  @@map("student_tuition_paid_through")
+}
+
+model OpsTeacher {
+  id       String @id
+  position Int
+  code     String
+  fullName String
+  phone    String
+  address  String
+  email    String
+
+  assignedClasses OpsTeacherAssignedClass[]
+
+  @@index([position])
+  @@map("teachers")
+}
+
+/// Lớp được phân công, lưu theo **tên lớp** đúng như dữ liệu gốc.
+model OpsTeacherAssignedClass {
+  teacherId String
+  position  Int
+  className String
+
+  teacher OpsTeacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, className])
+  @@map("teacher_assigned_classes")
+}
+
+model OpsAccountant {
+  id       String @id
+  position Int
+  code     String
+  fullName String
+  phone    String
+  address  String
+  email    String
+
+  @@index([position])
+  @@map("accountants")
+}
+
+model OpsAssistant {
+  id       String @id
+  position Int
+  code     String
+  fullName String
+  phone    String
+  address  String
+  email    String
+
+  @@index([position])
+  @@map("assistants")
+}
+
+// ------------------------------------------------------------
+// CẤU HÌNH TRUNG TÂM (khối `settings:steps-demo`)
+// ------------------------------------------------------------
+
+/// Bảng một dòng duy nhất; `id` cố định là "center".
+model OpsCenterSetting {
+  id      String @id
+  name    String
+  phone   String
+  email   String
+  logoUrl String
+  address String
+
+  @@map("center_settings")
+}
+
+model OpsBranch {
+  id       String @id
+  position Int
+  name     String
+
+  @@index([position])
+  @@map("branches")
+}
+
+model OpsClassType {
+  id          String @id
+  position    Int
+  name        String
+  description String
+
+  @@index([position])
+  @@map("class_types")
+}
+
+model OpsTuitionPackage {
+  id          String  @id
+  position    Int
+  classTypeId String
+  name        String
+  sessions    Int
+  amount      Decimal @db.Decimal(15, 0)
+
+  @@index([position])
+  @@map("tuition_packages")
+}
+
+model OpsLessonPeriod {
+  id        String @id
+  position  Int
+  name      String
+  startTime String
+  endTime   String
+
+  @@index([position])
+  @@map("lesson_periods")
+}
+
+model OpsRoom {
+  id       String @id
+  position Int
+  name     String
+  capacity Int
+  branchId String
+
+  @@index([position])
+  @@map("rooms")
+}
+
+// ------------------------------------------------------------
+// LỚP HỌC (khối `classes:steps-demo`)
+// ------------------------------------------------------------
+
+model OpsClass {
+  id               String  @id
+  position         Int
+  code             String
+  name             String
+  classTypeId      String
+  branchId         String
+  teacherId        String
+  roomId           String
+  syllabusId       String
+  status           String
+  note             String
+  tuitionPackageId String
+  billingMode      String
+  sessionPrice     Decimal @db.Decimal(15, 0)
+  courseSessions   Int
+  /// NULL = trường vắng mặt trong JSON gốc (lớp chưa chốt ngày khai giảng).
+  courseStartDate  String?
+  billingEnabled   Boolean
+
+  students     OpsClassStudent[]
+  schedules    OpsClassSchedule[]
+  materialFees OpsClassMaterialFee[]
+
+  @@index([position])
+  @@index([code])
+  @@map("classes")
+}
+
+/// Danh sách ghi danh. Không đặt khóa ngoại sang `students` vì dữ liệu thật có
+/// lớp trỏ tới học viên đã bị xóa; giữ nguyên trạng thái đó, không tạo bản ghi giả.
+model OpsClassStudent {
+  classId   String
+  studentId String
+  position  Int
+
+  class OpsClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, studentId])
+  @@index([studentId])
+  @@map("class_students")
+}
+
+model OpsClassSchedule {
+  classId       String
+  position      Int
+  weekday       Int
+  periodId      String
+  startTime     String
+  endTime       String
+  /// NULL = trường vắng mặt; lịch áp dụng từ đầu.
+  effectiveFrom String?
+  /// NULL = trường vắng mặt; lịch còn hiệu lực.
+  effectiveTo   String?
+
+  class OpsClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, position])
+  @@map("class_schedules")
+}
+
+/// Học liệu thu thêm theo kỳ. `periodKey` là "YYYY-MM" hoặc "course".
+model OpsClassMaterialFee {
+  classId     String
+  periodKey   String
+  amount      Decimal @db.Decimal(15, 0)
+  description String
+
+  class OpsClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([classId, periodKey])
+  @@map("class_material_fees")
+}
+
+// ------------------------------------------------------------
+// BUỔI HỌC VÀ ĐIỂM DANH (khối `sessions:steps-demo`)
+// ------------------------------------------------------------
+
+model OpsLessonSession {
+  id            String  @id
+  position      Int
+  classId       String
+  date          String
+  startTime     String
+  endTime       String
+  teacherId     String
+  roomId        String
+  status        String
+  isExtra       Boolean
+  recurrenceKey String
+  note          String
+  isOff         Boolean
+  /// NULL = trường vắng mặt. "ADMIN" học vụ chốt nghỉ, "TEACHER" giáo viên báo nghỉ.
+  offSource     String?
+  /// Buổi học diễn ra bình thường nhưng không tính học phí (khóa tự giãn bù).
+  noFee         Boolean @default(false)
+  /// Id buổi nghỉ mà buổi này dạy bù — buổi bù chiếm đúng vị trí khóa của buổi nghỉ.
+  makeupOf      String?
+  hasHomework   Boolean
+
+  assessmentColumns OpsSessionAssessmentColumn[]
+  columnOrder       OpsSessionAttendanceColumn[]
+  attendance        OpsAttendance[]
+
+  @@index([position])
+  @@index([classId, date])
+  @@map("lesson_sessions")
+}
+
+/// Cột đánh giá do giáo viên tự đặt cho buổi học.
+model OpsSessionAssessmentColumn {
+  sessionId String
+  columnId  String
+  position  Int
+  name      String
+
+  session OpsLessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, columnId])
+  @@map("session_assessment_columns")
+}
+
+/// Thứ tự các cột nghiệp vụ trong bảng điểm danh.
+model OpsSessionAttendanceColumn {
+  sessionId String
+  columnKey String
+  position  Int
+
+  session OpsLessonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, columnKey])
+  @@map("session_attendance_columns")
+}
+
+model OpsAttendance {
+  sessionId              String
+  studentId              String
+  position               Int
+  /// NULL ở đây là giá trị `null` thật trong JSON (chưa điểm danh), không phải vắng mặt trường.
+  status                 String?
+  firstStatus            String?
+  late                   Boolean
+  lessonRating           String?
+  homeworkRating         String?
+  pronunciationVideoDone Boolean
+  worksheetDone          Boolean
+  vocabularyScore        String?
+  note                   String
+
+  session OpsLessonSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  scores  OpsAttendanceScore[]
+
+  @@id([sessionId, studentId])
+  @@index([studentId])
+  @@map("attendances")
+}
+
+/// Điểm của các cột giáo viên tự đặt. Giá trị là chuỗi tự do ("56/65", "Tốt").
+model OpsAttendanceScore {
+  sessionId String
+  studentId String
+  columnId  String
+  position  Int
+  value     String
+
+  attendance OpsAttendance @relation(fields: [sessionId, studentId], references: [sessionId, studentId], onDelete: Cascade)
+
+  @@id([sessionId, studentId, columnId])
+  @@map("attendance_scores")
+}
+
+// ------------------------------------------------------------
+// BÁO CÁO ĐỊNH KỲ (khối `periodic-reports:steps-demo`)
+// ------------------------------------------------------------
+
+model OpsPeriodicReport {
+  id          String @id
+  position    Int
+  classId     String
+  studentId   String
+  periodType  String
+  periodKey   String
+  periodLabel String
+  fromDate    String
+  toDate      String
+  /// Điểm 0–10, một chữ số thập phân; `null` là chưa chấm.
+  listening   Float?
+  speaking    Float?
+  reading     Float?
+  writing     Float?
+  comment     String
+  /// Chuỗi ISO đúng như app ghi, không đổi sang kiểu ngày để giữ nguyên định dạng.
+  updatedAt   String
+  updatedBy   String
+
+  @@index([position])
+  @@index([classId, studentId])
+  @@map("periodic_reports")
+}
+
+// ------------------------------------------------------------
+// NHẬT KÝ (khối `audit:steps-demo`)
+// ------------------------------------------------------------
+
+model OpsAuditLog {
+  id        String @id
+  position  Int
+  /// Chuỗi ISO đúng như app ghi.
+  createdAt String
+  userName  String
+  userEmail String
+  role      String
+  action    String
+  entity    String
+  entityId  String
+  summary   String
+  /// Nghiệp vụ (TUITION · PROFILE · ATTENDANCE · STATEMENT · RECON · OTHER); dòng cũ để trống.
+  category  String @default("")
+  /// Chi tiết "từ … thành …": JSON [{ label, from, to }]; rỗng nếu không có.
+  details   String @default("")
+
+  @@index([position])
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------------
+// TÀI CHÍNH (khối `finance:steps-demo`)
+// ------------------------------------------------------------
+
+model OpsTuitionDebt {
+  id                String  @id
+  position          Int
+  studentId         String
+  studentCode       String
+  studentName       String
+  classId           String
+  className         String
+  packageName       String
+  totalAmount       Decimal @db.Decimal(15, 0)
+  paidAmount        Decimal @db.Decimal(15, 0)
+  remainingSessions Int
+  status            String
+
+  @@index([position])
+  @@map("tuition_debts")
+}
+
+/// Phiếu thu chi (sổ quỹ).
+model OpsCashEntry {
+  id          String  @id
+  position    Int
+  date        String
+  voucherDate String?
+  kind        String
+  source      String
+  category    String
+  description String
+  amount      Decimal @db.Decimal(15, 0)
+  method      String
+  branchId    String?
+  studentName String?
+  tuitionId   String?
+  receiptId   String?
+
+  @@index([position])
+  @@index([date])
+  @@map("cash_entries")
+}
+
+/// Đối soát tổng hợp theo ngày.
+model OpsReconDay {
+  date      String  @id
+  position  Int
+  tuitionIn Decimal @db.Decimal(15, 0)
+  manualIn  Decimal @db.Decimal(15, 0)
+  manualOut Decimal @db.Decimal(15, 0)
+  net       Decimal @db.Decimal(15, 0)
+  status    String
+  note      String
+
+  @@index([position])
+  @@map("recon_days")
+}
+
+/// Đối soát từng phiếu thu chi.
+model OpsReconEntry {
+  entryId    String  @id
+  position   Int
+  status     String
+  amount     Decimal @db.Decimal(15, 0)
+  date       String
+  approvedAt String?
+  approvedBy String?
+
+  @@index([position])
+  @@map("recon_entries")
+}
+
+model OpsPayrollRow {
+  id          String  @id
+  position    Int
+  teacherId   String
+  teacherCode String
+  teacherName String
+  sessions    Int
+  hours       Float
+  baseSalary  Decimal @db.Decimal(15, 0)
+  commission  Decimal @db.Decimal(15, 0)
+  tax         Decimal @db.Decimal(15, 0)
+  net         Decimal @db.Decimal(15, 0)
+
+  @@index([position])
+  @@map("payroll_rows")
+}
+
+/// Dự thu dự chi.
+model OpsFinanceForecast {
+  id          String  @id
+  position    Int
+  kind        String
+  category    String
+  description String
+  amount      Decimal @db.Decimal(15, 0)
+  dueDate     String
+  status      String
+  branchId    String?
+  createdAt   String?
+  updatedAt   String?
+  settledAt   String?
+
+  @@index([position])
+  @@map("finance_forecasts")
+}
+
+/// Biên lai đã bị người dùng xóa khỏi sổ thu chi, không tự phục hồi.
+model OpsCashbookSkippedReceipt {
+  receiptId String @id
+  position  Int
+
+  @@index([position])
+  @@map("cashbook_skipped_receipts")
+}
+
+// ------------------------------------------------------------
+// SỔ SEPAY (khối `finance:steps-demo` → `sepay`)
+// ------------------------------------------------------------
+
+/// Bảng một dòng duy nhất; `id` cố định là "sepay".
+model OpsSepaySetting {
+  id                     String  @id
+  bank                   String
+  accountNumber          String
+  accountName            String
+  /// Ảnh QR tĩnh dạng data URL; NULL = trường vắng mặt.
+  qrImageDataUrl         String?
+  autoMatchExact         Boolean
+  autoPartial            Boolean
+  autoOverpayment        Boolean
+  autoInvoiceExact       Boolean
+  autoInvoicePartial     Boolean
+  autoInvoiceOverpayment Boolean
+
+  @@map("sepay_settings")
+}
+
+model OpsSepayReceivable {
+  id             String  @id
+  position       Int
+  receivableCode String
+  studentId      String
+  studentName    String
+  billingPeriod  String
+  issueDate      String
+  dueDate        String
+  amountDue      Decimal @db.Decimal(15, 0)
+  amountPaid     Decimal @db.Decimal(15, 0)
+  balanceDue     Decimal @db.Decimal(15, 0)
+  currency       String
+  status         String
+  paymentOrderId String
+  classId        String?
+  billKey        String?
+  /// Có giá trị khi nhân viên đã bấm "Gửi yêu cầu thanh toán" (Phase 4) — chốt cứng
+  /// amountDue/billingPeriod, syncTuitionReceivables không còn ghi đè lại.
+  frozenAt       String?
+  /// Token cho trang thanh toán công khai /thanh-toan/<id>/<publicToken>.
+  publicToken    String?
+  requestedBy    String?
+  /// JSON [{creditId, amount}] — tín dụng (tiền thừa / bảo lưu) đã trừ vào phiếu này.
+  appliedCredits String?
+  /// JSON {at, billedSessions, consumedSessions, deductionSessions, deductionAmount,
+  /// issuedAmount} — phiếu kỳ đang chạy đã chốt lúc học viên rời lớp, chỉ thu
+  /// buổi đã học. Có giá trị thì số tiền phiếu là số còn lại sau khấu trừ.
+  leftClass      String?
+
+  @@index([position])
+  @@index([studentId])
+  @@map("sepay_receivables")
+}
+
+model OpsSepayPaymentOrder {
+  id           String  @id
+  position     Int
+  receivableId String
+  studentId    String
+  paymentCode  String
+  amount       Decimal @db.Decimal(15, 0)
+  qrUrl        String
+  status       String
+  createdAt    String
+
+  @@index([position])
+  @@index([paymentCode])
+  @@map("sepay_payment_orders")
+}
+
+model OpsSepayBankTransaction {
+  id                    String  @id
+  position              Int
+  provider              String
+  providerTransactionId String
+  accountNumber         String
+  transactionDate       String
+  transferType          String
+  transferAmount        Decimal @db.Decimal(15, 0)
+  content               String
+  status                String
+  reviewReason          String?
+  receivedAt            String
+  processedAt           String?
+
+  @@index([position])
+  @@map("sepay_bank_transactions")
+}
+
+model OpsSepayPayment {
+  id                String  @id
+  position          Int
+  paymentCode       String
+  studentId         String
+  bankTransactionId String
+  receivableId      String
+  amount            Decimal @db.Decimal(15, 0)
+  allocatedAmount   Decimal @db.Decimal(15, 0)
+  excessAmount      Decimal @db.Decimal(15, 0)
+  status            String
+  paidAt            String
+  method            String?
+  note              String?
+
+  @@index([position])
+  @@index([receivableId])
+  @@map("sepay_payments")
+}
+
+model OpsSepayReceipt {
+  id                 String   @id
+  position           Int
+  receiptNumber      String
+  paymentId          String
+  studentId          String
+  amount             Decimal  @db.Decimal(15, 0)
+  issuedAt           String
+  status             String
+  method             String?
+  note               String?
+  classId            String?
+  className          String?
+  billingPeriod      String?
+  billingMode        String?
+  studentName        String?
+  studentCode        String?
+  creditSessionsUsed Int?
+  materialsAmount    Decimal? @db.Decimal(15, 0)
+  paidThroughBefore  String?
+
+  @@index([position])
+  @@index([paymentId])
+  @@map("sepay_receipts")
+}
+
+model OpsSepayInvoice {
+  id            String  @id
+  position      Int
+  studentId     String
+  paymentId     String
+  receivableId  String
+  provider      String
+  invoiceNumber String?
+  invoiceSeries String?
+  amount        Decimal @db.Decimal(15, 0)
+  buyerName     String
+  lookupCode    String?
+  status        String
+  retryCount    Int
+  lastError     String?
+  createdAt     String
+  issuedAt      String?
+  /// Các cột dưới đây phục vụ phát hành hóa đơn thật qua MISA meInvoice (Phase 6).
+  buyerTaxCode      String?
+  buyerAddress      String?
+  buyerEmail        String?
+  pdfUrl            String?
+  xmlUrl            String?
+  providerInvoiceId String?
+  taxAuthorityCode  String?
+  /// Đặt khi hàng chờ khoá hóa đơn để gọi MISA; cứu hóa đơn kẹt PROCESSING quá 10 phút.
+  processingAt      String?
+  /// Kế toán đã xem bản nháp và bấm xuất: chỉ hóa đơn có mốc này mới được hàng chờ phát hành.
+  approvedAt        String?
+  /// Dấu vân tay nội dung bản nháp gần nhất đã dựng ở MISA; xuất thật chỉ khi nội dung còn khớp.
+  previewHash       String?
+
+  @@index([position])
+  @@map("sepay_invoices")
+}
+
+model OpsSepayCredit {
+  id              String  @id
+  position        Int
+  studentId       String
+  sourcePaymentId String
+  amount          Decimal @db.Decimal(15, 0)
+  remainingAmount Decimal @db.Decimal(15, 0)
+  reason          String
+  status          String
+  createdAt       String
+  /// Lớp sinh ra khoản bảo lưu — không tự áp ngược vào lớp này.
+  sourceClassId   String?
+
+  @@index([position])
+  @@map("sepay_credits")
+}
+
+model OpsSepayWebhookLog {
+  id                    String  @id
+  position              Int
+  requestId             String
+  signatureValid        Boolean
+  processingStatus      String
+  providerTransactionId String?
+  createdAt             String
+
+  @@index([position])
+  @@map("sepay_webhook_logs")
+}
+
+// ------------------------------------------------------------
+// TÍCH HỢP SEPAY / MISA / ZALO (khối `integrations:steps-demo` và `zalo-messages:steps-demo`)
+// ------------------------------------------------------------
+
+/// Cấu hình ba tích hợp (SePay webhook, MISA meInvoice, Zalo OA ZBS). Một dòng duy nhất,
+/// khóa cố định "integration". Bí mật lưu dạng ciphertext đục (mã hoá ở Phase 3).
+model OpsIntegrationSetting {
+  id        String @id
+  payload   Json
+  updatedAt String
+  updatedBy String
+
+  @@map("integration_settings")
+}
+
+/// Log gửi tin Zalo OA (ZBS Template Message). Khóa duy nhất theo (kind, receivableId,
+/// invoiceId) chặn gửi trùng: một khoản phải thu chỉ có đúng một tin yêu cầu thanh toán,
+/// một hóa đơn chỉ có đúng một tin thông báo (Phase 7).
+model OpsZaloMessageLog {
+  id            String  @id
+  position      Int
+  kind          String
+  receivableId  String?
+  invoiceId     String?
+  studentId     String
+  phone         String
+  templateId    String
+  status        String
+  providerMsgId String?
+  errorCode     String?
+  errorMessage  String?
+  createdAt     String
+  sentAt        String?
+  deliveredAt   String?
+  /// Mốc bắt đầu xử lý — cứu dòng kẹt PROCESSING khi tiến trình chết giữa chừng (Phase 7).
+  processingAt  String?
+  /// Ảnh chụp nội dung tin đã gửi, để xem lại ở Nhật ký Zalo dù dữ liệu gốc đã đổi sau đó.
+  /// Giá trị điền vào mẫu ZBS, dạng JSON text.
+  templateData  String?
+  studentName   String?
+  studentCode   String?
+  className     String?
+  /// Số điện thoại thô lấy từ hồ sơ trước khi chuẩn hoá về dạng 84xxxxxxxxx.
+  rawPhone      String?
+  requestedBy   String?
+  attemptCount  Int     @default(0)
+  lastAttemptAt String?
+  /// sent_time do Zalo trả về khi nhận tin.
+  providerSentTime String?
+  /// Webhook Zalo gần nhất của tin này: mốc nhận và nội dung gốc (đã cắt ngắn).
+  webhookAt     String?
+  webhookPayload String?
+
+  @@unique([kind, receivableId, invoiceId])
+  @@index([position])
+  @@index([studentId])
+  @@map("zalo_message_logs")
+}
+
+// ------------------------------------------------------------
+// SYLLABUS VÀ CÁC LẦN CHẠY DỮ LIỆU MỘT LẦN
+// ------------------------------------------------------------
+
+/// Danh mục syllabus — một tập thực thể nên mỗi syllabus một dòng.
+/// Trước đây nằm trong khối `do:catalog:steps-demo:items` của `vps_app_state`.
+model OpsSyllabusCatalogItem {
+  id              String  @id
+  position        Int
+  code            String
+  name            String
+  /// `null` ở đây là giá trị thật trong dữ liệu (syllabus chưa gắn cấp học).
+  levelId         String?
+  level           String
+  description     String
+  status          String
+  totalCourseDays Int
+  sortOrder       Int
+  createdAt       String
+  updatedAt       String
+
+  @@index([position])
+  @@map("syllabus_catalog")
+}
+
+/// Nội dung giáo trình của một syllabus.
+///
+/// Giữ nguyên dạng tài liệu thay vì tách thành bảng, vì `cloudflare/syllabus-storage.ts`
+/// luôn đọc và ghi **trọn gói** (`storage.get("document")` / `put("document", …)`) chứ
+/// không truy vấn từng bài học riêng lẻ. Tách nhỏ một tài liệu chỉ được đọc trọn gói
+/// sẽ thêm việc mà không thêm khả năng nào.
+model OpsSyllabusDocument {
+  syllabusId String   @id
+  document   Json
+  updatedAt  DateTime @updatedAt
+
+  @@map("syllabus_documents")
+}
+
+/// Các bước xử lý dữ liệu chạy đúng một lần của `worker.ts` (bù số dư buổi, ngày
+/// khai giảng khóa…). Trước đây là các cờ `kv:migration:*` trong `vps_app_state`.
+model OpsDataMigration {
+  key   String @id
+  /// Thời điểm chạy, chuỗi ISO đúng như app ghi.
+  ranAt String
+
+  @@map("data_migrations")
+}
+
+// ------------------------------------------------------------
+// DỮ LIỆU RIÊNG CỦA TỪNG HỌC VIÊN TRÊN CỔNG HỌC
+// ------------------------------------------------------------
+
+/// Tiến độ hoàn thành từng mục học của một học viên.
+/// Trước đây là khối `progress:<mã học viên>`.
+model OpsStudentProgress {
+  studentId String
+  itemId    String
+  completed Boolean
+
+  @@id([studentId, itemId])
+  @@map("student_progress")
+}
+
+/// Kết quả từng lượt chơi hoạt động. `worker.ts` giữ 100 lượt mới nhất cho mỗi
+/// học viên, mới nhất đứng đầu — `position` giữ đúng thứ tự đó.
+model OpsStudentActivityAttempt {
+  id              String @id
+  studentId       String
+  position        Int
+  syllabusId      String
+  activityId      String
+  score           Float
+  accuracy        Float
+  durationSeconds Float
+  /// Câu trả lời tùy theo loại hoạt động, không có khuôn cố định nên giữ dạng JSON.
+  answers         Json
+  completedAt     String
+
+  @@index([studentId, position])
+  @@map("student_activity_attempts")
+}
+
+/// Trạng thái màn hình học của học viên (ví dụ syllabus đang mở).
+/// Trước đây là khối `student:<mã học viên>`.
+model OpsStudentAppState {
+  studentId String @id
+  state     Json
+
+  @@map("student_app_state")
+}

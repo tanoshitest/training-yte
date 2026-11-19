@@ -1,0 +1,43 @@
+-- Pipeline tuyển sinh gọn: 8 giai đoạn + cờ bỏ test đầu vào.
+
+ALTER TABLE "recruitment_cases" ADD COLUMN IF NOT EXISTS "testWaived" BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TYPE "AdmissionStage_new" AS ENUM (
+  'RECEIVED',
+  'COLLECTING',
+  'WAITING_TEST',
+  'CONSULTING',
+  'LOCKED',
+  'PLACED',
+  'FIRST_MONTH_CARE',
+  'CARE_COMPLETE'
+);
+
+ALTER TABLE "recruitment_cases" ALTER COLUMN "stage" DROP DEFAULT;
+
+ALTER TABLE "recruitment_cases"
+  ALTER COLUMN "stage" TYPE "AdmissionStage_new"
+  USING (
+    CASE "stage"::text
+      WHEN 'RECEIVED' THEN 'RECEIVED'
+      WHEN 'TEST_SCHEDULED' THEN 'COLLECTING'
+      WHEN 'COLLECTING' THEN 'COLLECTING'
+      WHEN 'TESTED' THEN 'WAITING_TEST'
+      WHEN 'WAITING_TEST' THEN 'WAITING_TEST'
+      WHEN 'CONSULTING' THEN 'CONSULTING'
+      WHEN 'TUITION_PAID' THEN 'LOCKED'
+      WHEN 'UNPLACED' THEN 'LOCKED'
+      WHEN 'LOCKED' THEN 'LOCKED'
+      WHEN 'PLACED' THEN 'PLACED'
+      WHEN 'ONBOARDING' THEN 'FIRST_MONTH_CARE'
+      WHEN 'ENROLLED' THEN 'FIRST_MONTH_CARE'
+      WHEN 'FIRST_MONTH_CARE' THEN 'FIRST_MONTH_CARE'
+      WHEN 'CARE_COMPLETE' THEN 'CARE_COMPLETE'
+      ELSE 'RECEIVED'
+    END
+  )::"AdmissionStage_new";
+
+DROP TYPE "AdmissionStage";
+ALTER TYPE "AdmissionStage_new" RENAME TO "AdmissionStage";
+
+ALTER TABLE "recruitment_cases" ALTER COLUMN "stage" SET DEFAULT 'RECEIVED';

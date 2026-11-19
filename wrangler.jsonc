@@ -1,0 +1,68 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "steps-lms-demo",
+  "main": "cloudflare/worker-entry.ts",
+  "compatibility_date": "2026-08-31",
+  "assets": {
+    "directory": "cloudflare/public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/dang-nhap",
+      "/dashboard",
+      "/dashboard/*",
+      "/portal",
+      "/portal/*",
+      "/syllabus",
+      "/syllabus/*",
+      "/activity-preview/*",
+      "/cai-dat",
+      "/cai-dat/*",
+      "/hoc-vien",
+      "/hoc-vien/*",
+      "/giao-vien",
+      "/giao-vien/*",
+      "/gv",
+      "/gv/*",
+      "/lop-hoc",
+      "/lop-hoc/*",
+      "/lich-day",
+      "/lich-day/*",
+      "/nhat-ky",
+      "/nhat-ky/*",
+      "/bao-cao",
+      "/bao-cao/*",
+      "/bao-cao-cham-cong",
+      "/ke-toan",
+      "/ke-toan/*",
+      "/ke-toan-vien",
+      "/ke-toan-vien/*"
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "STEPS_LMS_DATA",
+      "id": "3e932cbb663e435a926e7e7a1cf0c91f"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "SYLLABUS_CATALOG", "class_name": "SyllabusCatalog" },
+      { "name": "SYLLABUS_DOCUMENT", "class_name": "SyllabusDocumentObject" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-syllabus-storage",
+      "new_sqlite_classes": ["SyllabusCatalog", "SyllabusDocumentObject"]
+    }
+  ],
+  "vars": {
+    "ALLOW_DEMO_LOGIN": "true"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

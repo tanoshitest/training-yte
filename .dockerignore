@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.tsbuildinfo
+src/generated
+
+# Tài liệu không tham gia build. Để chúng trong build context thì mỗi lần sửa
+# tài liệu là `COPY . .` đổi theo, Docker phải build lại Next từ đầu.
+docs
+README.md
+PLAN.md

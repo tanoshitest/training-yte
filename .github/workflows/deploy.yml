@@ -1,0 +1,27 @@
+name: Deploy lên VPS
+
+# Build và deploy chạy trên self-hosted runner đặt tại chính VPS, nên mã nguồn
+# và ảnh Docker không bao giờ rời khỏi máy đó. GitHub chỉ điều phối.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # Push liên tiếp thì bản sau đợi bản trước xong, không deploy chồng nhau.
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, vsteps]
+    timeout-minutes: 30
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Triển khai
+        run: bash deploy/deploy.sh
+
+      - name: Xác nhận app trả lời
+        run: curl -fsS "http://127.0.0.1:${APP_PORT:-3100}/api/health"

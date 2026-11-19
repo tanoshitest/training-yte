@@ -1,0 +1,44 @@
+[
+  {
+    "id": "syllabus-starters",
+    "code": "STEPS-STARTERS",
+    "name": "STEPS Starters",
+    "level": "Kids 1",
+    "duration": "24 tuần",
+    "units": [
+      { "id": "starters-u1", "unitNumber": 1, "title": "OUR NEW SCHOOL", "description": "Chào hỏi và đồ dùng trong lớp học" },
+      { "id": "starters-u2", "unitNumber": 2, "title": "ALL ABOUT US", "description": "Giới thiệu bản thân và bạn bè" },
+      { "id": "starters-u3", "unitNumber": 3, "title": "FUN ON THE FARM", "description": "Động vật và hoạt động ngoài trời" },
+      { "id": "starters-u4", "unitNumber": 4, "title": "FOOD WITH FRIENDS", "description": "Đồ ăn, thức uống và sở thích" },
+      { "id": "starters-u5", "unitNumber": 5, "title": "HAPPY BIRTHDAY!", "description": "Tuổi, ngày tháng và tiệc sinh nhật" },
+      { "id": "starters-u6", "unitNumber": 6, "title": "A DAY OUT", "description": "Địa điểm và hoạt động cuối tuần" }
+    ]
+  },
+  {
+    "id": "syllabus-movers",
+    "code": "STEPS-MOVERS",
+    "name": "STEPS Movers",
+    "level": "Kids 2",
+    "duration": "24 tuần",
+    "units": [
+      { "id": "movers-u1", "unitNumber": 1, "title": "A DAY ON THE FARM", "description": "Kể lại hoạt động trong ngày" },
+      { "id": "movers-u2", "unitNumber": 2, "title": "MY WEEK", "description": "Thời khóa biểu và thói quen" },
+      { "id": "movers-u3", "unitNumber": 3, "title": "THE FAMILY AT HOME", "description": "Gia đình và công việc nhà" },
+      { "id": "movers-u4", "unitNumber": 4, "title": "ANIMAL WORLD", "description": "Môi trường sống của động vật" },
+      { "id": "movers-u5", "unitNumber": 5, "title": "OUR WEATHER", "description": "Thời tiết và các mùa" }
+    ]
+  },
+  {
+    "id": "syllabus-teens",
+    "code": "STEPS-TEENS",
+    "name": "STEPS Teens",
+    "level": "Teens 1",
+    "duration": "24 tuần",
+    "units": [
+      { "id": "teens-u1", "unitNumber": 1, "title": "THIS YEAR'S TRIP", "description": "Lập kế hoạch và trải nghiệm du lịch" },
+      { "id": "teens-u2", "unitNumber": 2, "title": "OUR BEAUTIFUL PLANET", "description": "Thiên nhiên và bảo vệ môi trường" },
+      { "id": "teens-u3", "unitNumber": 3, "title": "LET'S CELEBRATE!", "description": "Văn hóa và các ngày lễ" },
+      { "id": "teens-u4", "unitNumber": 4, "title": "WORKING TOGETHER", "description": "Kỹ năng làm việc nhóm" }
+    ]
+  }
+]

@@ -1,0 +1,5 @@
+NEXTJS_ENV=development
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/stepslms?sslmode=require"
+AUTH_SECRET="replace-with-a-random-production-secret"
+AUTH_TRUST_HOST=true
+NEXTAUTH_URL="http://localhost:8787"

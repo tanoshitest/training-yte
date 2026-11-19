@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: stepslms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stepslms
+      POSTGRES_PASSWORD: stepslms
+      POSTGRES_DB: stepslms
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5434:5432"
+    volumes:
+      - stepslms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stepslms -d stepslms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  stepslms_pgdata:

@@ -1,0 +1,881 @@
+{
+ "name": "Chương Trình 2021",
+ "code": "CT2021",
+ "source": "Chương Trình 2021.docx",
+ "lessons": [
+  {
+   "title": "Brown bear, what do you see?",
+   "notes": "Chào hỏi, giới thiệu bản thân.\nHọc câu chuyện: Brown bear, what do you see?",
+   "vocab": [
+    {
+     "prompt": "brown bear",
+     "answer": "gấu nâu"
+    },
+    {
+     "prompt": "red bird",
+     "answer": "chim đỏ"
+    },
+    {
+     "prompt": "blue horse",
+     "answer": "ngựa xanh dương"
+    },
+    {
+     "prompt": "purple cat",
+     "answer": "mèo tím"
+    },
+    {
+     "prompt": "white dog",
+     "answer": "chó trắng"
+    },
+    {
+     "prompt": "green frog",
+     "answer": "ếch xanh lá"
+    },
+    {
+     "prompt": "yellow duck",
+     "answer": "vịt vàng"
+    },
+    {
+     "prompt": "black sheep",
+     "answer": "cừu đen"
+    },
+    {
+     "prompt": "goldfish",
+     "answer": "cá vàng"
+    },
+    {
+     "prompt": "teacher",
+     "answer": "cô giáo"
+    }
+   ],
+   "vocabFromSentences": true,
+   "sentences": [
+    {
+     "prompt": "I see a brown bear.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a red bird.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a blue horse.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a purple cat.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a white dog.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a green frog.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a yellow duck.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a black sheep.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a goldfish.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a teacher.",
+     "answer": ""
+    }
+   ],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Traffic light",
+   "notes": "Ôn tập câu chuyện: Brown bear, what do you see?\nHọc bài mới: Traffic light",
+   "vocab": [
+    {
+     "prompt": "red light - stop",
+     "answer": "đèn đỏ - dừng lại"
+    },
+    {
+     "prompt": "green light - go",
+     "answer": "đèn xanh - đi"
+    },
+    {
+     "prompt": "yellow light - go slowly",
+     "answer": "đèn vàng - đi chậm"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "I can",
+   "notes": "Ôn tập câu chuyện: Brown bear, what do you see? - Traffic light\nHọc bài mới: I can + Jolly Phonics Group 1: s",
+   "vocab": [
+    {
+     "prompt": "clap",
+     "answer": "vỗ tay"
+    },
+    {
+     "prompt": "dance",
+     "answer": "nhảy múa"
+    },
+    {
+     "prompt": "jump",
+     "answer": "nhảy lên"
+    },
+    {
+     "prompt": "shake",
+     "answer": "lắc"
+    },
+    {
+     "prompt": "hop",
+     "answer": "nhảy lò cò"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [
+    {
+     "prompt": "I can clap.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can dance.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can shake.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can jump.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can hop.",
+     "answer": ""
+    }
+   ],
+   "phonics": "s",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Ôn tập",
+   "notes": "Ôn tập câu chuyện: Brown bear, what do you see? - Traffic light - I can\nÔn tập 3 nội dung đã học\nHọc Jolly Phonics Group 1: a",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": "a",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Speaking",
+   "notes": "Ôn tập các nội dung đã học\nSpeaking 1-1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "In the morning",
+   "notes": "Học bài mới: In the morning + Jolly Phonics Group 1: t",
+   "vocab": [
+    {
+     "prompt": "wake up",
+     "answer": "thức dậy"
+    },
+    {
+     "prompt": "get out of bed",
+     "answer": "ra khỏi giường"
+    },
+    {
+     "prompt": "wash my face",
+     "answer": "rửa mặt"
+    },
+    {
+     "prompt": "comb my hair",
+     "answer": "chải tóc"
+    },
+    {
+     "prompt": "eat breakfast",
+     "answer": "ăn sáng"
+    },
+    {
+     "prompt": "brush my teeth",
+     "answer": "đánh răng"
+    },
+    {
+     "prompt": "get dressed",
+     "answer": "mặc quần áo"
+    },
+    {
+     "prompt": "go to school",
+     "answer": "đi học"
+    }
+   ],
+   "vocabFromSentences": true,
+   "sentences": [
+    {
+     "prompt": "I wake up.",
+     "answer": ""
+    },
+    {
+     "prompt": "I get out of bed.",
+     "answer": ""
+    },
+    {
+     "prompt": "I wash my face.",
+     "answer": ""
+    },
+    {
+     "prompt": "I comb my hair.",
+     "answer": ""
+    },
+    {
+     "prompt": "I eat breakfast.",
+     "answer": ""
+    },
+    {
+     "prompt": "I brush my teeth.",
+     "answer": ""
+    },
+    {
+     "prompt": "I get dressed.",
+     "answer": ""
+    },
+    {
+     "prompt": "I go to school.",
+     "answer": ""
+    }
+   ],
+   "phonics": "t",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Household items",
+   "notes": "Ôn tập câu chuyện: Brown bear, what do you see? - Traffic light - I can - In the morning\nHọc bài mới: Household items + Jolly Phonics Group 1: p",
+   "vocab": [
+    {
+     "prompt": "toothbrush",
+     "answer": "bàn chải đánh răng"
+    },
+    {
+     "prompt": "toothpaste",
+     "answer": "kem đánh răng"
+    },
+    {
+     "prompt": "towel",
+     "answer": "khăn tắm"
+    },
+    {
+     "prompt": "soap",
+     "answer": "xà phòng"
+    },
+    {
+     "prompt": "comb",
+     "answer": "cái lược"
+    },
+    {
+     "prompt": "mirror",
+     "answer": "cái gương"
+    },
+    {
+     "prompt": "spoon",
+     "answer": "cái thìa"
+    },
+    {
+     "prompt": "bowl",
+     "answer": "cái bát"
+    }
+   ],
+   "vocabFromSentences": true,
+   "sentences": [
+    {
+     "prompt": "This is a toothbrush.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a toothpaste.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a towel.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a soap.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a comb.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a mirror.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a spoon.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is a bowl.",
+     "answer": ""
+    }
+   ],
+   "phonics": "p",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Color",
+   "notes": "Học bài mới: Color + Jolly Phonics Group 1: n",
+   "vocab": [
+    {
+     "prompt": "red",
+     "answer": "màu đỏ"
+    },
+    {
+     "prompt": "yellow",
+     "answer": "màu vàng"
+    },
+    {
+     "prompt": "pink",
+     "answer": "màu hồng"
+    },
+    {
+     "prompt": "blue",
+     "answer": "màu xanh dương"
+    },
+    {
+     "prompt": "purple",
+     "answer": "màu tím"
+    },
+    {
+     "prompt": "orange",
+     "answer": "màu cam"
+    },
+    {
+     "prompt": "green",
+     "answer": "màu xanh lá"
+    },
+    {
+     "prompt": "white",
+     "answer": "màu trắng"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [
+    {
+     "prompt": "It is a red flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a yellow flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a pink flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a blue flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a green flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is an orange flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a purple flower.",
+     "answer": ""
+    },
+    {
+     "prompt": "It is a white flower.",
+     "answer": ""
+    }
+   ],
+   "phonics": "n",
+   "homework": "- Hoàn thành bài tập về nhà\n+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Ôn tập",
+   "notes": "Ôn tập các nội dung đã học: Brown bear, what do you see? - Traffic light - I can - In the morning - Household items - Color\nJolly Phonics Group 1: s, a, t, p, n",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": "s, a, t, p, n (ôn tập)",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Speaking",
+   "notes": "Ôn tập các nội dung đã học\nSpeaking 1-1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "Body parts",
+   "notes": "Ôn tập: tất cả các bài đã học\nHọc bài mới: Body parts + Jolly Phonics Group 1: i",
+   "vocab": [
+    {
+     "prompt": "nose",
+     "answer": "cái mũi"
+    },
+    {
+     "prompt": "mouth",
+     "answer": "cái miệng"
+    },
+    {
+     "prompt": "head",
+     "answer": "cái đầu"
+    },
+    {
+     "prompt": "eyes",
+     "answer": "đôi mắt"
+    },
+    {
+     "prompt": "ears",
+     "answer": "đôi tai"
+    },
+    {
+     "prompt": "shoulders",
+     "answer": "đôi vai"
+    },
+    {
+     "prompt": "knees",
+     "answer": "đầu gối"
+    },
+    {
+     "prompt": "toes",
+     "answer": "ngón chân"
+    }
+   ],
+   "vocabFromSentences": true,
+   "sentences": [
+    {
+     "prompt": "This is my nose.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is my mouth.",
+     "answer": ""
+    },
+    {
+     "prompt": "This is my head.",
+     "answer": ""
+    },
+    {
+     "prompt": "These are my eyes.",
+     "answer": ""
+    },
+    {
+     "prompt": "These are my ears.",
+     "answer": ""
+    },
+    {
+     "prompt": "These are my shoulders.",
+     "answer": ""
+    },
+    {
+     "prompt": "These are my knees.",
+     "answer": ""
+    },
+    {
+     "prompt": "These are my toes.",
+     "answer": ""
+    }
+   ],
+   "phonics": "i",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Clothes",
+   "notes": "Ôn tập: tất cả bài đã học\nHọc bài mới: Clothes",
+   "vocab": [
+    {
+     "prompt": "T-shirt",
+     "answer": "áo phông"
+    },
+    {
+     "prompt": "shirt",
+     "answer": "áo sơ mi"
+    },
+    {
+     "prompt": "jacket",
+     "answer": "áo khoác"
+    },
+    {
+     "prompt": "pants",
+     "answer": "quần dài"
+    },
+    {
+     "prompt": "scarf",
+     "answer": "khăn quàng"
+    },
+    {
+     "prompt": "hat",
+     "answer": "cái mũ"
+    },
+    {
+     "prompt": "shoes",
+     "answer": "đôi giày"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [
+    {
+     "prompt": "Put on your shoes.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your T-shirt.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your shirt.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your jacket.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your pants.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your scarf.",
+     "answer": ""
+    },
+    {
+     "prompt": "Put on your hat.",
+     "answer": ""
+    }
+   ],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "I see",
+   "notes": "Ôn tập: tất cả các bài đã học (từ vựng - mẫu câu)\nHọc bài mới: I see",
+   "vocab": [
+    {
+     "prompt": "rock",
+     "answer": "hòn đá"
+    },
+    {
+     "prompt": "ant",
+     "answer": "con kiến"
+    },
+    {
+     "prompt": "butterfly",
+     "answer": "con bướm"
+    },
+    {
+     "prompt": "tree",
+     "answer": "cái cây"
+    },
+    {
+     "prompt": "cat",
+     "answer": "con mèo"
+    },
+    {
+     "prompt": "bee",
+     "answer": "con ong"
+    },
+    {
+     "prompt": "flower",
+     "answer": "bông hoa"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [
+    {
+     "prompt": "I see a rock.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see an ant.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a butterfly.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a tree.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a cat.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a bee.",
+     "answer": ""
+    },
+    {
+     "prompt": "I see a flower.",
+     "answer": ""
+    }
+   ],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Ôn tập",
+   "notes": "Ôn tập các nội dung đã học\nÔn tập Jolly Phonics Group 1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": "Group 1 (ôn tập)",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Speaking",
+   "notes": "Ôn tập các nội dung đã học\nSpeaking 1-1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video"
+  },
+  {
+   "title": "I can (part 2)",
+   "notes": "Học bài mới: I can (part 2)",
+   "vocab": [
+    {
+     "prompt": "drive",
+     "answer": "lái xe"
+    },
+    {
+     "prompt": "cook",
+     "answer": "nấu ăn"
+    },
+    {
+     "prompt": "run",
+     "answer": "chạy"
+    },
+    {
+     "prompt": "play music",
+     "answer": "chơi nhạc"
+    },
+    {
+     "prompt": "swim",
+     "answer": "bơi"
+    },
+    {
+     "prompt": "fly",
+     "answer": "bay"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [
+    {
+     "prompt": "I can drive.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can cook.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can run.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can play music.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can swim.",
+     "answer": ""
+    },
+    {
+     "prompt": "I can fly.",
+     "answer": ""
+    }
+   ],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Rainbow car",
+   "notes": "Ôn các nội dung đã học\nHọc bài mới: Rainbow car",
+   "vocab": [
+    {
+     "prompt": "red car",
+     "answer": "xe màu đỏ"
+    },
+    {
+     "prompt": "pink car",
+     "answer": "xe màu hồng"
+    },
+    {
+     "prompt": "yellow car",
+     "answer": "xe màu vàng"
+    },
+    {
+     "prompt": "green car",
+     "answer": "xe màu xanh lá"
+    },
+    {
+     "prompt": "blue car",
+     "answer": "xe màu xanh dương"
+    },
+    {
+     "prompt": "brown car",
+     "answer": "xe màu nâu"
+    },
+    {
+     "prompt": "purple car",
+     "answer": "xe màu tím"
+    },
+    {
+     "prompt": "rainbow car",
+     "answer": "xe cầu vồng"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Ôn tập Jolly Phonics Group 1",
+   "notes": "Ôn tập các âm Jolly Phonics\nBlending Jolly Phonics",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": "Group 1 — Blending",
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Foods and drink",
+   "notes": "Ôn tập: tất cả bài cũ\nHọc bài mới: Foods and drink",
+   "vocab": [
+    {
+     "prompt": "broccoli",
+     "answer": "bông cải xanh"
+    },
+    {
+     "prompt": "pizza",
+     "answer": "bánh pizza"
+    },
+    {
+     "prompt": "ice cream",
+     "answer": "kem"
+    },
+    {
+     "prompt": "soup",
+     "answer": "súp"
+    },
+    {
+     "prompt": "donut",
+     "answer": "bánh donut"
+    },
+    {
+     "prompt": "juice",
+     "answer": "nước ép"
+    },
+    {
+     "prompt": "popcorn",
+     "answer": "bỏng ngô"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Ôn tập",
+   "notes": "Ôn tập tất cả các bài đã học\nSpeaking 1-1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại tất cả từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Happy birthday",
+   "notes": "Ôn tập: tất cả các bài đã học\nHọc bài mới: Happy birthday",
+   "vocab": [
+    {
+     "prompt": "balloons",
+     "answer": "bóng bay"
+    },
+    {
+     "prompt": "hats",
+     "answer": "mũ"
+    },
+    {
+     "prompt": "cookies and candies",
+     "answer": "bánh quy và kẹo"
+    },
+    {
+     "prompt": "cups and plates",
+     "answer": "cốc và đĩa"
+    },
+    {
+     "prompt": "candles",
+     "answer": "nến"
+    },
+    {
+     "prompt": "a cake",
+     "answer": "bánh kem"
+    },
+    {
+     "prompt": "gifts and cards",
+     "answer": "quà và thiệp"
+    }
+   ],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại tất cả từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Ôn tập",
+   "notes": "Ôn tập tất cả các bài đã học\nSpeaking 1-1",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": "+ Luyện tập lại tất cả từ vựng và mẫu câu đã học theo video hướng dẫn\n+ Bố mẹ hỗ trợ con quay video bài học theo video cô gửi kèm"
+  },
+  {
+   "title": "Speaking Test (1/2)",
+   "notes": "Lesson 23+24: Speaking Test",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": ""
+  },
+  {
+   "title": "Speaking Test (2/2)",
+   "notes": "Lesson 23+24: Speaking Test",
+   "vocab": [],
+   "vocabFromSentences": false,
+   "sentences": [],
+   "phonics": null,
+   "homework": ""
+  }
+ ]
+}

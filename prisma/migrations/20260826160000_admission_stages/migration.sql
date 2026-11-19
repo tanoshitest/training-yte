@@ -1,0 +1,39 @@
+-- Pipeline tuyển sinh: đổi 10 giai đoạn theo quy trình mới.
+
+CREATE TYPE "AdmissionStage_new" AS ENUM (
+  'RECEIVED',
+  'TEST_SCHEDULED',
+  'TESTED',
+  'CONSULTING',
+  'TUITION_PAID',
+  'UNPLACED',
+  'PLACED',
+  'ENROLLED',
+  'FIRST_MONTH_CARE',
+  'CARE_COMPLETE'
+);
+
+ALTER TABLE "recruitment_cases" ALTER COLUMN "stage" DROP DEFAULT;
+
+ALTER TABLE "recruitment_cases"
+  ALTER COLUMN "stage" TYPE "AdmissionStage_new"
+  USING (
+    CASE "stage"::text
+      WHEN 'RECEIVED' THEN 'RECEIVED'
+      WHEN 'INFO_COMPLETE' THEN 'TEST_SCHEDULED'
+      WHEN 'ASSESSMENT_PENDING' THEN 'TESTED'
+      WHEN 'PLACEMENT_READY' THEN 'PLACED'
+      WHEN 'TUITION_CONSULTED' THEN 'CONSULTING'
+      WHEN 'WAITING_PAYMENT' THEN 'TUITION_PAID'
+      WHEN 'ONBOARDING' THEN 'ENROLLED'
+      WHEN 'ENROLLED' THEN 'ENROLLED'
+      WHEN 'ON_HOLD' THEN 'FIRST_MONTH_CARE'
+      WHEN 'LOST' THEN 'CARE_COMPLETE'
+      ELSE 'RECEIVED'
+    END
+  )::"AdmissionStage_new";
+
+DROP TYPE "AdmissionStage";
+ALTER TYPE "AdmissionStage_new" RENAME TO "AdmissionStage";
+
+ALTER TABLE "recruitment_cases" ALTER COLUMN "stage" SET DEFAULT 'RECEIVED';

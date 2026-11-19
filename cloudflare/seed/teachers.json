@@ -1,0 +1,13 @@
+[
+  { "id": "teacher-quynh", "code": "GV0001", "fullName": "Trịnh Thị Xuân Quỳnh", "phone": "0919 638 328", "address": "", "email": "teacher@steps.edu.vn", "assignedClasses": ["STEPS Starters A"] },
+  { "id": "teacher-kieu-trinh", "code": "GV0002", "fullName": "Hồ Kiều Trinh", "phone": "0357 986 108", "address": "", "email": "kieu.trinh@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-ngoc-han", "code": "GV0003", "fullName": "Nguyễn Thị Ngọc Hân", "phone": "0941 155 408", "address": "", "email": "ngoc.han@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-van", "code": "GV0004", "fullName": "Dương Thị Vân", "phone": "0856 661 668", "address": "", "email": "duong.van@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-kim-chi", "code": "GV0005", "fullName": "Nguyễn Kim Chi", "phone": "0855 565 99", "address": "", "email": "kim.chi@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-bich", "code": "GV0006", "fullName": "Ngô Thị Bích", "phone": "0826 850 072", "address": "", "email": "bich@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-thanh-thuy", "code": "GV0007", "fullName": "Nguyễn Thị Thanh Thủy", "phone": "0948 675 261", "address": "", "email": "thanh.thuy@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-phuong-thuy", "code": "GV0008", "fullName": "Trần Phương Thúy", "phone": "0383 973 494", "address": "", "email": "phuong.thuy@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-huyen", "code": "GV0009", "fullName": "Lê Thị Huyền", "phone": "0948 249 396", "address": "", "email": "le.huyen@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-ai-duc", "code": "GV0010", "fullName": "Nguyễn Thị Ái Đức", "phone": "0942 092 798", "address": "", "email": "ai.duc@steps.edu.vn", "assignedClasses": [] },
+  { "id": "teacher-quyen", "code": "GV0011", "fullName": "Phạm Thị Quyên", "phone": "0979 935 930", "address": "", "email": "quyen@steps.edu.vn", "assignedClasses": [] }
+]

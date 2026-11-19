@@ -1,0 +1,65 @@
+# Triển khai STEPS LMS trên VPS.
+#
+# App nghe trên 127.0.0.1 và đi ra ngoài qua reverse proxy của CloudPanel, nên
+# không mở cổng nào ra Internet. PostgreSQL cũng chỉ nghe trong máy.
+
+# Đặt tên project cố định: nếu để Compose tự suy từ tên thư mục thì đổi đường dẫn
+# checkout là thành project khác và **mất volume chứa database**.
+name: vsteps
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: vsteps-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Chỉ nghe trong máy để còn dump/restore bằng tay khi cần.
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile.vps
+    image: vsteps-lms:latest
+    container_name: vsteps-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_TRUST_HOST: "true"
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME}
+      ALLOW_DEMO_LOGIN: "false"
+      # Migration chạy ở bước deploy để lỗi lộ ra trong log CI, không ẩn trong
+      # lần khởi động lại của container.
+      RUN_MIGRATIONS: "false"
+      RUN_SEED: "false"
+      SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      LMS_READONLY_API_TOKEN: ${LMS_READONLY_API_TOKEN:-}
+      LMS_OPS_API_TOKEN: ${LMS_OPS_API_TOKEN:-}
+      # Học liệu Portal (ảnh, âm thanh, video) — xem cloudflare/portal-media.ts.
+      MEDIA_DIR: /app/media
+    volumes:
+      # Volume riêng cho học liệu: deploy dựng lại container không làm mất file đã tải lên.
+      - media-data:/app/media
+    ports:
+      - "127.0.0.1:${APP_PORT:-3100}:3000"
+
+volumes:
+  postgres-data:
+  media-data:
